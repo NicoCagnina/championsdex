@@ -362,14 +362,13 @@ export default function BattlePage() {
     setFieldState(prev => ({ ...prev, ...update }))
   }
 
-  /* Battle counter — once per session */
+  /* Battle counter — every visit */
   useEffect(() => {
-    const validMyTeam = myTeam.filter(Boolean)
-    if (validMyTeam.length > 0 && !sessionStorage.getItem('pcc-battle-counted')) {
+    if (myTeam.some(Boolean)) {
       fetch('/api/stats/battles', { method: 'POST' }).catch(() => {})
-      sessionStorage.setItem('pcc-battle-counted', '1')
     }
-  }, [myTeam])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function calcSpeedWithField(p: PokemonData, team: 'my' | 'enemy'): number {
     const base = calcEffectiveSpeed(p)

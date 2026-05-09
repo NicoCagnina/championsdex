@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useStore } from '@/lib/store'
@@ -12,12 +12,54 @@ import { PokemonData } from '@/lib/types'
 
 /* ── Stats widget ──────────────────────────────── */
 
+function AnimatedNumber({ value }: { value: number }) {
+  const [displayed, setDisplayed] = useState(value)
+  const rafRef = useRef<number | null>(null)
+  const prevRef = useRef(value)
+
+  useEffect(() => {
+    const from = prevRef.current
+    const to = value
+    prevRef.current = value
+    if (from === to) return
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    const duration = 700
+    const start = performance.now()
+    function tick(now: number) {
+      const t = Math.min((now - start) / duration, 1)
+      const eased = 1 - (1 - t) ** 3
+      setDisplayed(Math.round(from + (to - from) * eased))
+      if (t < 1) rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [value])
+
+  return <>{displayed.toLocaleString()}</>
+}
+
 function StatsWidget() {
   const { t } = useT()
   const [stats, setStats] = useState<{ teams: number; battles: number; trainers: number } | null>(null)
+  const [pulse, setPulse] = useState(false)
 
   useEffect(() => {
-    fetch('/api/stats').then(r => r.json()).then(setStats).catch(() => {})
+    const fetchStats = () =>
+      fetch('/api/stats')
+        .then(r => r.json())
+        .then(data => {
+          setStats(prev => {
+            if (prev && (prev.teams !== data.teams || prev.battles !== data.battles || prev.trainers !== data.trainers)) {
+              setPulse(true)
+              setTimeout(() => setPulse(false), 600)
+            }
+            return data
+          })
+        })
+        .catch(() => {})
+    fetchStats()
+    const id = setInterval(fetchStats, 10_000)
+    return () => clearInterval(id)
   }, [])
 
   if (!stats) return null
@@ -29,11 +71,14 @@ function StatsWidget() {
   ]
 
   return (
-    <div className="flex items-center justify-center gap-8 py-8 mt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+    <div
+      className="flex items-center justify-center gap-8 py-8 mt-6 border-t transition-all"
+      style={{ borderColor: 'var(--border)', opacity: pulse ? 0.7 : 1 }}
+    >
       {items.map(({ value, label, icon }) => (
         <div key={label} className="text-center">
           <div className="font-mono text-xl font-black" style={{ color: 'var(--accent)' }}>
-            {value.toLocaleString()}
+            <AnimatedNumber value={value} />
           </div>
           <div className="text-[9px] uppercase tracking-wider mt-0.5" style={{ color: 'var(--muted)' }}>
             {icon} {label}
@@ -71,6 +116,17 @@ export default function TeamBuilder() {
     }
   }, [])
 
+  /* Teams counter — fires when team reaches 6, resets if dropped below */
+  const teamWasFullRef = useRef(false)
+  useEffect(() => {
+    if (filledCount === 6 && !teamWasFullRef.current) {
+      teamWasFullRef.current = true
+      fetch('/api/stats/teams', { method: 'POST' }).catch(() => {})
+    } else if (filledCount < 6) {
+      teamWasFullRef.current = false
+    }
+  }, [filledCount])
+
   function addPokemon(pokemon: PokemonData) {
     if (myTeam.some(p => p?.id === pokemon.id)) return
     const slot = myTeam.findIndex(p => p === null)
@@ -93,7 +149,6 @@ export default function TeamBuilder() {
     if (!name || filledCount === 0) return
     saveTeam(name)
     setSaveInput('')
-    fetch('/api/stats/teams', { method: 'POST' }).catch(() => {})
   }
 
   function handleLoad(name: string) {
