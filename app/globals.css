@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Light mode ───────────────────────────────── */
+:root {
+  --bg:           #f0f4fb;
+  --surface:      rgba(255, 255, 255, 0.92);
+  --card:         rgba(255, 255, 255, 0.88);
+  --border:       rgba(10, 50, 120, 0.11);
+  --border-subtle:rgba(10, 50, 120, 0.06);
+  --accent:       #1d6fb8;
+  --accent-glow:  rgba(29, 111, 184, 0.18);
+  --warm:         #c97a0a;
+  --text:         #0b1829;
+  --muted:        #5a718a;
+  --dot:          rgba(0, 0, 0, 0.045);
+}
+
+/* ── Dark mode ────────────────────────────────── */
+.dark {
+  --bg:           #060b14;
+  --surface:      rgba(10, 16, 30, 0.95);
+  --card:         rgba(12, 20, 38, 0.9);
+  --border:       rgba(56, 189, 248, 0.1);
+  --border-subtle:rgba(56, 189, 248, 0.05);
+  --accent:       #38bdf8;
+  --accent-glow:  rgba(56, 189, 248, 0.18);
+  --warm:         #fbbf24;
+  --text:         #dae8f4;
+  --muted:        #4d6a82;
+  --dot:          rgba(255, 255, 255, 0.025);
+}
+
+/* ── Base ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { color-scheme: dark; }
+.dark html { color-scheme: dark; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-syne), system-ui, sans-serif;
+  transition: background-color 0.25s, color 0.25s;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dot grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--dot) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Utilities ────────────────────────────────── */
+.glass {
+  background: var(--card);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.section-label {
+  font-size: 9px;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
