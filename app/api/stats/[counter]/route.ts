@@ -1,3 +1,5 @@
+import { getKVCredentials } from '@/lib/redis'
+
 const VALID = new Set(['teams', 'battles', 'trainers'])
 
 export async function POST(
@@ -9,17 +11,13 @@ export async function POST(
     return Response.json({ error: 'Invalid counter' }, { status: 400 })
   }
 
-  const url = process.env.KV_REST_API_URL
-  const token = process.env.KV_REST_API_TOKEN
-
-  if (!url || !token) {
-    return Response.json({ result: 0 })
-  }
+  const creds = getKVCredentials()
+  if (!creds) return Response.json({ result: 0 })
 
   try {
-    const res = await fetch(`${url}/incr/counter:${counter}`, {
+    const res = await fetch(`${creds.url}/incr/counter:${counter}`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${creds.token}` },
     })
     const data = await res.json()
     return Response.json({ result: data.result })
